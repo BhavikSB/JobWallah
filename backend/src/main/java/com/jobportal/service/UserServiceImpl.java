@@ -32,97 +32,107 @@ import jakarta.mail.internet.MimeMessage;
 
 @Service("userService")
 public class UserServiceImpl implements UserService {
-	@Autowired
-	private UserRepository userRepository;
+    @Autowired
+    private UserRepository userRepository;
 
-	@Autowired
-	private OTPRepository otpRepository;
-	
-	@Autowired
-	private ProfileService profileService;
+    @Autowired
+    private OTPRepository otpRepository;
+    
+    @Autowired
+    private ProfileService profileService;
 
-	@Autowired
-	private PasswordEncoder passwordEncoder;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
-	@Autowired
-	private JavaMailSender mailSender;
+    @Autowired
+    private JavaMailSender mailSender;
 
-	@Autowired
-	private NotificationService notificationService;
-	
-	@Override
-	public UserDTO registerUser(UserDTO userDTO) throws JobPortalException {
-		Optional<User> optional = userRepository.findByEmail(userDTO.getEmail());
-		if (optional.isPresent())
-			throw new JobPortalException("USER_FOUND");
-		userDTO.setId(Utilities.getNextSequenceId("users"));
-		userDTO.setPassword(passwordEncoder.encode(userDTO.getPassword()));
-		userDTO.setProfileId(profileService.createProfile(userDTO));		
-		User user = userRepository.save(userDTO.toEntity());
-		user.setPassword(null);
-		return user.toDTO();
-	}
+    @Autowired
+    private NotificationService notificationService;
+    
+    // INJECT THE UTILITIES BEAN
+    @Autowired
+    private Utilities utilities;
 
-	@Override
-	public UserDTO loginUser(LoginDTO loginDTO) throws JobPortalException {
-		User user = userRepository.findByEmail(loginDTO.getEmail())
-				.orElseThrow(() -> new JobPortalException("USER_NOT_FOUND"));
-		if (!passwordEncoder.matches(loginDTO.getPassword(), user.getPassword()))
-			throw new JobPortalException("INVALID_CREDENTIALS");
-		user.setPassword(null);
-		return user.toDTO();
-	}
+    @Override
+    public UserDTO registerUser(UserDTO userDTO) throws JobPortalException {
+        Optional<User> optional = userRepository.findByEmail(userDTO.getEmail());
+        if (optional.isPresent())
+            throw new JobPortalException("USER_FOUND");
+        
+        // CALL THE NON-STATIC METHOD
+        userDTO.setId(utilities.getNextSequenceId("users"));
+        userDTO.setPassword(passwordEncoder.encode(userDTO.getPassword()));
+        userDTO.setProfileId(profileService.createProfile(userDTO));      
+        
+        User user = userRepository.save(userDTO.toEntity());
+        user.setPassword(null);
+        return user.toDTO();
+    }
 
-	@Override
-	public Boolean sendOTP(String email) throws Exception {
-		User user=userRepository.findByEmail(email).orElseThrow(() -> new JobPortalException("USER_NOT_FOUND"));
-		MimeMessage mm = mailSender.createMimeMessage();
-		MimeMessageHelper message = new MimeMessageHelper(mm, true);
-		message.setTo(email);
-		message.setSubject("Your OTP Code");
-		String generatedOtp = Utilities.generateOTP();
-		OTP otp = new OTP(email, generatedOtp, LocalDateTime.now());
-		otpRepository.save(otp);
-		message.setText(Data.getMessageBody(generatedOtp, user.getName()), true);
-		mailSender.send(mm);
-		return true;
-	}
-	
+    @Override
+    public UserDTO loginUser(LoginDTO loginDTO) throws JobPortalException {
+        User user = userRepository.findByEmail(loginDTO.getEmail())
+                .orElseThrow(() -> new JobPortalException("USER_NOT_FOUND"));
+        if (!passwordEncoder.matches(loginDTO.getPassword(), user.getPassword()))
+            throw new JobPortalException("INVALID_CREDENTIALS");
+        user.setPassword(null);
+        return user.toDTO();
+    }
 
-	@Override
-	public Boolean verifyOtp(String email, String otp) throws JobPortalException {
-		OTP otpEntity = otpRepository.findById(email).orElseThrow(() -> new JobPortalException("OTP_NOT_FOUND"));
-		if(!otpEntity.getOtpCode().equals(otp))throw new JobPortalException("OTP_INCORRECT");
-		return true;
-	}
+    @Override
+    public Boolean sendOTP(String email) throws Exception {
+        User user=userRepository.findByEmail(email).orElseThrow(() -> new JobPortalException("USER_NOT_FOUND"));
+        MimeMessage mm = mailSender.createMimeMessage();
+        MimeMessageHelper message = new MimeMessageHelper(mm, true);
+        message.setTo(email);
+        message.setSubject("Your OTP Code");
+        
+        // CALL THE NON-STATIC METHOD
+        String generatedOtp = utilities.generateOTP();
+        
+        OTP otp = new OTP(email, generatedOtp, LocalDateTime.now());
+        otpRepository.save(otp);
+        message.setText(Data.getMessageBody(generatedOtp, user.getName()), true);
+        mailSender.send(mm);
+        return true;
+    }
+    
 
-	@Scheduled(fixedRate = 60000)
-	public void removeExpiredOTPs() {
-		LocalDateTime expiryTime = LocalDateTime.now().minusMinutes(5);
-		List<OTP> expiredOTPs = otpRepository.findByCreationTimeBefore(expiryTime);
-		if (!expiredOTPs.isEmpty()) {
-			otpRepository.deleteAll(expiredOTPs);
-			System.out.println("Removed "+ expiredOTPs.size()+" expired OTPs");
-		}
-	}
+    @Override
+    public Boolean verifyOtp(String email, String otp) throws JobPortalException {
+        OTP otpEntity = otpRepository.findById(email).orElseThrow(() -> new JobPortalException("OTP_NOT_FOUND"));
+        if(!otpEntity.getOtpCode().equals(otp))throw new JobPortalException("OTP_INCORRECT");
+        return true;
+    }
 
-	@Override
-	public ResponseDTO changePassword(LoginDTO loginDTO) throws JobPortalException {
-		User user = userRepository.findByEmail(loginDTO.getEmail())
-				.orElseThrow(() -> new JobPortalException("USER_NOT_FOUND"));
-		user.setPassword(passwordEncoder.encode(loginDTO.getPassword()));
-		userRepository.save(user);
-		NotificationDTO noti=new NotificationDTO();
-		noti.setUserId(user.getId());
-		noti.setMessage("Password Reset Successfull");
-		noti.setAction("Password Reset");
-		notificationService.sendNotification(noti);
-		return new ResponseDTO("Password changed successfully.");
-	}
+    @Scheduled(fixedRate = 60000)
+    public void removeExpiredOTPs() {
+        LocalDateTime expiryTime = LocalDateTime.now().minusMinutes(5);
+        List<OTP> expiredOTPs = otpRepository.findByCreationTimeBefore(expiryTime);
+        if (!expiredOTPs.isEmpty()) {
+            otpRepository.deleteAll(expiredOTPs);
+            System.out.println("Removed "+ expiredOTPs.size()+" expired OTPs");
+        }
+    }
 
-	@Override
-	public UserDTO getUserByEmail(String email) throws JobPortalException {
-		return userRepository.findByEmail(email).orElseThrow(() -> new JobPortalException("USER_NOT_FOUND")).toDTO();
-	}
+    @Override
+    public ResponseDTO changePassword(LoginDTO loginDTO) throws JobPortalException {
+        User user = userRepository.findByEmail(loginDTO.getEmail())
+                .orElseThrow(() -> new JobPortalException("USER_NOT_FOUND"));
+        user.setPassword(passwordEncoder.encode(loginDTO.getPassword()));
+        userRepository.save(user);
+        NotificationDTO noti=new NotificationDTO();
+        noti.setUserId(user.getId());
+        noti.setMessage("Password Reset Successfull");
+        noti.setAction("Password Reset");
+        notificationService.sendNotification(noti);
+        return new ResponseDTO("Password changed successfully.");
+    }
+
+    @Override
+    public UserDTO getUserByEmail(String email) throws JobPortalException {
+        return userRepository.findByEmail(email).orElseThrow(() -> new JobPortalException("USER_NOT_FOUND")).toDTO();
+    }
 
 }

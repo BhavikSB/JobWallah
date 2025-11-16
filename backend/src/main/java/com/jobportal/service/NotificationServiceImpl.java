@@ -11,31 +11,37 @@ import com.jobportal.dto.NotificationStatus;
 import com.jobportal.entity.Notification;
 import com.jobportal.exception.JobPortalException;
 import com.jobportal.repository.NotificationRepository;
-import com.jobportal.utility.Utilities;
+import com.jobportal.utility.Utilities; // <-- Import Utilities
 
 @Service("notificationService")
 public class NotificationServiceImpl implements NotificationService{
-	@Autowired
-	private NotificationRepository notificationRepository;
+    
+    @Autowired
+    private NotificationRepository notificationRepository;
 
-	@Override
-	public void sendNotification(NotificationDTO notificationDTO) throws JobPortalException {
-		notificationDTO.setId(Utilities.getNextSequenceId("notification"));
-		notificationDTO.setStatus(NotificationStatus.UNREAD);
-		notificationDTO.setTimestamp(LocalDateTime.now());
-		notificationRepository.save(notificationDTO.toEntity());
-	}
+    // 1. INJECT THE UTILITIES BEAN
+    @Autowired
+    private Utilities utilities;
 
-	@Override
-	public List<Notification> getUnreadNotifications(Long userId) {
-		return notificationRepository.findByUserIdAndStatus(userId, NotificationStatus.UNREAD);
-	}
+    @Override
+    public void sendNotification(NotificationDTO notificationDTO) throws JobPortalException {
+        // 2. CALL THE NON-STATIC METHOD
+        notificationDTO.setId(utilities.getNextSequenceId("notification"));
+        notificationDTO.setStatus(NotificationStatus.UNREAD);
+        notificationDTO.setTimestamp(LocalDateTime.now());
+        notificationRepository.save(notificationDTO.toEntity());
+    }
 
-	@Override
-	public void readNotification(Long id) throws JobPortalException {
-		Notification noti=notificationRepository.findById(id).orElseThrow(()->new JobPortalException("No Notitication found"));
-		noti.setStatus(NotificationStatus.READ);
-		notificationRepository.save(noti);
-		
-	}
+    @Override
+    public List<Notification> getUnreadNotifications(Long userId) {
+        return notificationRepository.findByUserIdAndStatus(userId, NotificationStatus.UNREAD);
+    }
+
+    @Override
+    public void readNotification(Long id) throws JobPortalException {
+        Notification noti=notificationRepository.findById(id).orElseThrow(()->new JobPortalException("No Notitication found"));
+        noti.setStatus(NotificationStatus.READ);
+        notificationRepository.save(noti);
+        
+    }
 }

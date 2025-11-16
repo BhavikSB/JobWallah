@@ -15,33 +15,36 @@ import com.jobportal.exception.JobPortalException;
 
 @Component
 public class Utilities {
-	private static MongoOperations mongoOperation;
+    
+    @Autowired
+    private MongoOperations mongoOperation;
 
-	@Autowired
-	public void setMongoOperation(MongoOperations mongoOperation) {
-		Utilities.mongoOperation = mongoOperation;
-	}
+    public Long getNextSequenceId(String key) throws JobPortalException {
+        Query query = new Query(Criteria.where("_id").is(key));
+        
+        Update update = new Update();
+        update.inc("seq", 1);
+        
+        FindAndModifyOptions options = new FindAndModifyOptions();
+        options.returnNew(true);
+        options.upsert(true); // Create the sequence if it doesn't exist
 
-	public static Long getNextSequenceId(String key) throws JobPortalException {
-		Query query = new Query(Criteria.where("_id").is(key));
-		Update update = new Update();
-		update.inc("seq", 1);
-		FindAndModifyOptions options = new FindAndModifyOptions();
-		options.returnNew(true);
-		Sequence seqId = mongoOperation.findAndModify(query, update, options, Sequence.class);
-		if (seqId == null) {
-			throw new JobPortalException("Unable to get sequence id for key : " + key);
-		}
+        Sequence seqId = mongoOperation.findAndModify(query, update, options, Sequence.class);
+        
+        if (seqId == null) {
+            // This should ideally not be hit with upsert=true, but good to have
+            throw new JobPortalException("Unable to get sequence id for key : " + key);
+        }
 
-		return seqId.getSeq();
-	}
+        return seqId.getSeq();
+    }
 
-	public static String generateOTP() {
-		StringBuilder otp = new StringBuilder();
-		SecureRandom secureRandom = new SecureRandom();
-		for (int i = 0; i < 6; i++) {
-			otp.append(secureRandom.nextInt(10));
-		}
-		return otp.toString();
-	}
+    public String generateOTP() {
+        StringBuilder otp = new StringBuilder();
+        SecureRandom secureRandom = new SecureRandom();
+        for (int i = 0; i < 6; i++) {
+            otp.append(secureRandom.nextInt(10));
+        }
+        return otp.toString();
+    }
 }
