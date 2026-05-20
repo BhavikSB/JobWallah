@@ -92,7 +92,7 @@ const testimonials = [
         "name": "Sarthak Gandhi",
         "testimonial": "Found my dream job within a week! The application process was smooth & the experience was too great.",
         "rating": 5,
-        "image": "Sarthak_gandhi.png"
+        "image": "sarthak_gandhi.png"
     }
 ];
 
