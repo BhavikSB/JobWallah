@@ -39,13 +39,13 @@ const ProfileMenu = () => {
                     Profile
                 </Menu.Item>
                 </Link>
-                <Menu.Item leftSection={<IconMessageCircle style={{ width: rem(14), height: rem(14) }} />}>
+                {/* <Menu.Item leftSection={<IconMessageCircle style={{ width: rem(14), height: rem(14) }} />}>
                     Messages
                 </Menu.Item>
                 <Menu.Item leftSection={<IconFileText style={{ width: rem(14), height: rem(14) }} />}>
                     Resume
-                </Menu.Item>
-                <Menu.Item
+                </Menu.Item> */}
+                {/* <Menu.Item
                     leftSection={<IconMoon style={{ width: rem(14), height: rem(14) }} />}
                     rightSection={
                         <Switch size="sm" color="dark" className='cursor-pointer'
@@ -64,7 +64,7 @@ const ProfileMenu = () => {
                     }
                 >
                     Dark Mode
-                </Menu.Item>
+                </Menu.Item> */}
 
                 <Menu.Divider />
 

@@ -52,15 +52,19 @@ const Info = () => {
     </div>
     </div>
         {
-            edit ? <> <div  data-aos="zoom-out"className=" flex gap-10 md-mx:gap-5 [&>*]:w-1/2 xs-mx:[&>*]:w-full xs-mx:flex-wrap my-3" >
-                <SelectInput form={form} name="jobTitle"  {...select[0]} />
-                <SelectInput form={form} name="company" {...select[1]} />
-            </div>
-            <div data-aos="zoom-out" className=" flex gap-10 md-mx:gap-5 [&>*]:w-1/2 xs-mx:[&>*]:w-full xs-mx:flex-wrap my-3" >
-                <SelectInput name="location" form={form}  {...select[2]} />
-                <NumberInput data-aos="zoom-out" label="Experience" withAsterisk hideControls  clampBehavior="strict" min={1} max={50} {...form.getInputProps('totalExp')} />
-            </div>
-            </> :
+    edit ? <> 
+    {/* ADD 'relative z-50' TO THIS DIV */}
+    <div data-aos="zoom-out" className=" flex gap-10 md-mx:gap-5 [&>*]:w-1/2 xs-mx:[&>*]:w-full xs-mx:flex-wrap my-3 relative z-50" >
+        <SelectInput form={form} name="jobTitle"  {...select[0]} />
+        <SelectInput form={form} name="company" {...select[1]} />
+    </div>
+    
+    {/* ADD 'relative z-40' TO THIS DIV */}
+    <div data-aos="zoom-out" className=" flex gap-10 md-mx:gap-5 [&>*]:w-1/2 xs-mx:[&>*]:w-full xs-mx:flex-wrap my-3 relative z-40" >
+        <SelectInput name="location" form={form}  {...select[2]} />
+        <NumberInput data-aos="zoom-out" label="Experience" withAsterisk hideControls  clampBehavior="strict" min={1} max={50} {...form.getInputProps('totalExp')} />
+    </div>
+    </> :
                 <>
                     <div  className="text-xl xs-mx:text-base flex gap-1 items-center"> <IconBriefcase className="h-5 w-5" stroke={1.5} />{profile.jobTitle}  &bull; {profile.company}</div>
                     <div className="text-lg xs-mx:text-base flex gap-1 items-center text-mine-shaft-300">
